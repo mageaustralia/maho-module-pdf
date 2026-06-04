@@ -35,13 +35,13 @@ class Mageaustralia_Pdf_Model_Observer
         $helper = Mage::helper('mageaustralia_pdf');
         foreach (array_unique($matches[1]) as $rawIncrement) {
             $increment = trim($rawIncrement);
-            if (!$helper->isEnabled()) {
-                continue;
-            }
             try {
                 $order = Mage::getModel('sales/order')->loadByIncrementId($increment);
                 if (!$order->getId()) {
                     Mage::log('attach_invoice: order not found ' . $increment, Mage::LOG_WARNING, 'mageaustralia_pdf.log');
+                    continue;
+                }
+                if (!$helper->isEnabled((int) $order->getStoreId())) {
                     continue;
                 }
                 $pdf = Mage::helper('mageaustralia_pdf/pdf')->renderInvoice($order);
