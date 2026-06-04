@@ -1,0 +1,95 @@
+<?php
+/** @var Mageaustralia_Pdf_Block_Invoice $this */
+$order   = $this->getOrder();
+$helper  = $this->pdfHelper();
+$storeId = $this->getStoreId();
+$logo    = $this->getLogoDataUri();
+$billing = $this->getAddressLines($order->getBillingAddress());
+$shipping = $this->getAddressLines($order->getShippingAddress());
+?>
+<style>
+    body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #222; }
+    .hdr { width: 100%; }
+    .hdr td { vertical-align: top; }
+    .logo { width: 200px; }
+    .store { text-align: right; font-size: 9px; }
+    .title { border-top: 2px solid #222; border-bottom: 2px solid #222; padding: 6px 0; margin: 10px 0; font-size: 14px; font-weight: bold; }
+    .title span { float: right; font-weight: normal; }
+    .addr { width: 100%; margin-bottom: 8px; }
+    .addr td { vertical-align: top; width: 50%; }
+    .addr h4 { margin: 0 0 4px; font-size: 10px; }
+    table.items { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    table.items th { border-bottom: 1px solid #222; text-align: left; padding: 4px; font-size: 10px; }
+    table.items td { padding: 4px; }
+    .num { text-align: right; }
+    .totals { width: 40%; float: right; margin-top: 6px; }
+    .totals td { padding: 2px 4px; }
+    .grand { border-top: 1px solid #222; font-weight: bold; }
+    .meta td { padding: 1px 4px; vertical-align: top; }
+    .footer { margin-top: 40px; font-size: 9px; }
+</style>
+
+<table class="hdr">
+    <tr>
+        <td class="logo"><?php if ($logo): ?><img src="<?= $logo ?>" style="max-width:180px;"/><?php else: ?><strong><?= $this->escapeHtml($helper->getStoreName($storeId)) ?></strong><?php endif; ?></td>
+        <td class="store">
+            <?php foreach (explode("\n", $helper->getStoreAddress($storeId)) as $line): ?>
+                <?= $this->escapeHtml(trim($line)) ?><br/>
+            <?php endforeach; ?>
+            <?= $this->escapeHtml($helper->getAbn($storeId)) ?>
+        </td>
+    </tr>
+</table>
+
+<div class="title">TAX INVOICE/RECEIPT <span>Order #<?= $this->escapeHtml($order->getIncrementId()) ?> &nbsp; <?= $this->escapeHtml($order->getCreatedAtFormated('medium')) ?></span></div>
+
+<table class="addr">
+    <tr>
+        <td>
+            <h4>BILLING ADDRESS:</h4>
+            <?php foreach ($billing as $line): ?><?= $this->escapeHtml($line) ?><br/><?php endforeach; ?>
+            <?php if ($order->getBillingAddress() && $order->getBillingAddress()->getTelephone()): ?>T: <?= $this->escapeHtml($order->getBillingAddress()->getTelephone()) ?><?php endif; ?>
+        </td>
+        <td>
+            <h4>SHIPPING ADDRESS:</h4>
+            <?php foreach ($shipping as $line): ?><?= $this->escapeHtml($line) ?><br/><?php endforeach; ?>
+            <?php if ($order->getCustomerEmail()): ?>E: <?= $this->escapeHtml($order->getCustomerEmail()) ?><?php endif; ?>
+        </td>
+    </tr>
+</table>
+
+<table class="meta">
+    <?php if ($order->getShippingDescription()): ?><tr><td>Shipping Type</td><td><?= $this->escapeHtml($order->getShippingDescription()) ?></td></tr><?php endif; ?>
+    <tr><td>Payment</td><td><?= $this->escapeHtml($this->getPaymentLabel()) ?></td></tr>
+</table>
+
+<table class="items">
+    <thead>
+        <tr><th>Qty</th><th>Items</th><th class="num">Price</th><th class="num">GST</th><th class="num">Total</th></tr>
+    </thead>
+    <tbody>
+        <?php foreach ($this->getItems() as $item): ?>
+            <tr>
+                <td><?= (int) $item->getQtyOrdered() ?></td>
+                <td><?= $this->escapeHtml($item->getName()) ?></td>
+                <td class="num"><?= $this->formatPrice((float) $item->getPrice()) ?></td>
+                <td class="num"><?= $this->formatPrice((float) $item->getTaxAmount()) ?></td>
+                <td class="num"><?= $this->formatPrice((float) $item->getRowTotalInclTax()) ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+
+<table class="totals">
+    <tr><td>Subtotal</td><td class="num"><?= $this->formatPrice((float) $order->getSubtotal()) ?></td></tr>
+    <tr><td>Shipping</td><td class="num"><?= $this->formatPrice((float) $order->getShippingAmount()) ?></td></tr>
+    <tr><td>GST</td><td class="num"><?= $this->formatPrice((float) $order->getTaxAmount()) ?></td></tr>
+    <tr class="grand"><td>Grand Total</td><td class="num"><?= $this->formatPrice((float) $order->getGrandTotal()) ?></td></tr>
+</table>
+
+<div class="footer">
+    <strong>Bank Account Details:</strong><br/>
+    <?php foreach (explode("\n", $helper->getBankDetails($storeId)) as $line): ?>
+        <?= $this->escapeHtml(trim($line)) ?><br/>
+    <?php endforeach; ?>
+</div>
