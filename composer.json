@@ -1,0 +1,27 @@
+{
+    "name": "mageaustralia/maho-module-pdf",
+    "description": "Attach a branded invoice/receipt PDF to Maho transactional emails via an {{attach_invoice(<orderIncrement>)}} marker. Dompdf-rendered, no Zend.",
+    "type": "maho-module",
+    "license": "OSL-3.0",
+    "homepage": "https://github.com/mageaustralia/maho-module-pdf",
+    "keywords": ["maho", "magento", "invoice", "pdf", "email", "dompdf"],
+    "authors": [
+        { "name": "Mage Australia", "email": "dev@mageaustralia.com.au", "homepage": "https://mageaustralia.com.au" }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "mahocommerce/maho": "^26.5",
+        "dompdf/dompdf": "^3.0 || ^2.0"
+    },
+    "autoload": {
+        "psr-0": { "Mageaustralia_Pdf_": "app/code/community/" }
+    },
+    "extra": {
+        "map": [
+            ["app/code/community/Mageaustralia/Pdf", "app/code/community/Mageaustralia/Pdf"],
+            ["app/etc/modules/Mageaustralia_Pdf.xml", "app/etc/modules/Mageaustralia_Pdf.xml"],
+            ["app/design/frontend/base/default/template/mageaustralia/pdf", "app/design/frontend/base/default/template/mageaustralia/pdf"],
+            ["app/locale/en_US/Mageaustralia_Pdf.csv", "app/locale/en_US/Mageaustralia_Pdf.csv"]
+        ]
+    }
+}
