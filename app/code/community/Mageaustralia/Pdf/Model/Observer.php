@@ -19,6 +19,13 @@ class Mageaustralia_Pdf_Model_Observer
     public const MARKER_PATTERN = '/\{\{attach_invoice(?:\(([^)]*)\))?\}\}/';
 
     /**
+     * Upper bound on distinct invoices attached to a single email. Markers come from
+     * admin-authored templates, but this caps order loads + PDF renders so a malformed
+     * template cannot turn one send into an unbounded amount of work.
+     */
+    public const MAX_ATTACHMENTS = 20;
+
+    /**
      * Hooked on both email_template_send_before (synchronous sends) and
      * email_queue_send_before (queued transactional emails, e.g. the new-order email).
      * Attaches an invoice PDF for each marker, then strips the markers. Never blocks
@@ -43,6 +50,10 @@ class Mageaustralia_Pdf_Model_Observer
         /** @var array<int, Mage_Sales_Model_Order> $orders keyed by id to de-dupe */
         $orders = [];
         foreach ($matches[1] as $rawIncrement) {
+            if (count($orders) >= self::MAX_ATTACHMENTS) {
+                Mage::log('attach_invoice: attachment cap reached (' . self::MAX_ATTACHMENTS . '), ignoring remaining markers', Mage::LOG_WARNING, 'mageaustralia_pdf.log');
+                break;
+            }
             $increment = trim((string) $rawIncrement);
             if ($increment !== '') {
                 // Explicit: {{attach_invoice(700000004)}}

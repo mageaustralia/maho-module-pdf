@@ -45,6 +45,12 @@ class Mageaustralia_Pdf_Helper_Data extends Mage_Core_Helper_Abstract
         if ($file === '') {
             return '';
         }
+        // basename() strips any directory component so a tampered config value
+        // (e.g. "../../app/etc/local.xml") cannot traverse outside the logo dir.
+        $file = basename($file);
+        if ($file === '' || $file === '.' || $file === '..') {
+            return '';
+        }
         $path = Mage::getBaseDir('media') . DS . 'mageaustralia' . DS . 'pdf' . DS . $file;
         return is_readable($path) ? $path : '';
     }
