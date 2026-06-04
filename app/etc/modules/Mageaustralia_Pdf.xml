@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Mageaustralia_Pdf>
+            <active>true</active>
+            <codePool>community</codePool>
+        </Mageaustralia_Pdf>
+    </modules>
+</config>
