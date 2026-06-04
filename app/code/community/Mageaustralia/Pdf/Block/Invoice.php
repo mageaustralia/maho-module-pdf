@@ -107,4 +107,52 @@ class Mageaustralia_Pdf_Block_Invoice extends Mage_Core_Block_Template
         }
         return $title;
     }
+
+    /**
+     * Whether to show the shipping-detail rows (Authority to Leave / Shipping Note).
+     * atl_required is set by the TW checkout/Shippit on shippable orders; it is null on
+     * installs/orders that do not use it, so those see no extra rows.
+     */
+    public function hasShippingDetails(): bool
+    {
+        return $this->getOrder()->getData('atl_required') !== null;
+    }
+
+    /**
+     * Order date without time (matches the legacy invoice; avoids locale time glyphs
+     * the PDF font cannot render).
+     */
+    public function getOrderDate(): string
+    {
+        return (string) Mage::helper('core')->formatDate(
+            $this->getOrder()->getCreatedAt(),
+            Mage_Core_Model_Locale::FORMAT_TYPE_LONG,
+            false,
+        );
+    }
+
+    public function getAuthorityToLeave(): string
+    {
+        return $this->getOrder()->getAtlRequired() ? 'Yes' : 'No';
+    }
+
+    /**
+     * Delivery instructions from the Starshipit note record (shipnote/note) when present.
+     */
+    public function getShippingNote(): string
+    {
+        $order = $this->getOrder();
+        $noteModel = Mage::getModel('shipnote/note');
+        if ($noteModel) {
+            try {
+                $note = $noteModel->loadByOrder($order);
+                if ($note && $note->getId() && $note->getDeliveryInstructions()) {
+                    return (string) $note->getDeliveryInstructions();
+                }
+            } catch (\Throwable $e) {
+                // note module/data absent - fall through
+            }
+        }
+        return (string) ($order->getShippitDeliveryInstructions() ?? '');
+    }
 }

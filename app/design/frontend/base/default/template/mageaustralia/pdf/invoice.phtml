@@ -41,7 +41,7 @@ $shipping = $this->getAddressLines($order->getShippingAddress());
     </tr>
 </table>
 
-<div class="title">TAX INVOICE/RECEIPT <span>Order #<?= $this->escapeHtml($order->getIncrementId()) ?> &nbsp; <?= $this->escapeHtml($order->getCreatedAtFormated('medium')) ?></span></div>
+<div class="title">TAX INVOICE/RECEIPT <span>Order #<?= $this->escapeHtml($order->getIncrementId()) ?> &nbsp; <?= $this->escapeHtml($this->getOrderDate()) ?></span></div>
 
 <table class="addr">
     <tr>
@@ -60,6 +60,10 @@ $shipping = $this->getAddressLines($order->getShippingAddress());
 
 <table class="meta">
     <?php if ($order->getShippingDescription()): ?><tr><td>Shipping Type</td><td><?= $this->escapeHtml($order->getShippingDescription()) ?></td></tr><?php endif; ?>
+    <?php if ($this->hasShippingDetails()): ?>
+        <tr><td>Authority to Leave</td><td><?= $this->escapeHtml($this->getAuthorityToLeave()) ?></td></tr>
+        <tr><td>Shipping Note</td><td><?= $this->escapeHtml($this->getShippingNote()) ?></td></tr>
+    <?php endif; ?>
     <tr><td>Payment</td><td><?= $this->escapeHtml($this->getPaymentLabel()) ?></td></tr>
 </table>
 
