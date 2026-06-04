@@ -31,6 +31,15 @@
                     </mageaustralia_pdf_attach>
                 </observers>
             </email_template_send_before>
+            <email_queue_send_before>
+                <observers>
+                    <mageaustralia_pdf_attach>
+                        <type>singleton</type>
+                        <class>mageaustralia_pdf/observer</class>
+                        <method>attachOnEmailSend</method>
+                    </mageaustralia_pdf_attach>
+                </observers>
+            </email_queue_send_before>
         </events>
     </global>
     <default>
