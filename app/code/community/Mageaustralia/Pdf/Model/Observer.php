@@ -31,7 +31,7 @@ class Mageaustralia_Pdf_Model_Observer
      * Attaches an invoice PDF for each marker, then strips the markers. Never blocks
      * the email: a failed PDF is logged and skipped.
      */
-    public function attachOnEmailSend(Varien_Event_Observer $observer): void
+    public function attachOnEmailSend(\Maho\Event\Observer $observer): void
     {
         $event = $observer->getEvent();
         $mail = $event->getData('mail');
@@ -40,7 +40,7 @@ class Mageaustralia_Pdf_Model_Observer
         }
 
         $body = (string) $mail->getHtmlBody();
-        if (strpos($body, 'attach_invoice') === false) {
+        if (!str_contains($body, 'attach_invoice')) {
             return;
         }
         if (!preg_match_all(self::MARKER_PATTERN, $body, $matches)) {
@@ -101,7 +101,7 @@ class Mageaustralia_Pdf_Model_Observer
      *  - synchronous send: the template variables carry the order object;
      *  - queued send: the queue message carries the entity (order or invoice).
      */
-    protected function _resolveOrder(Varien_Event $event): ?Mage_Sales_Model_Order
+    protected function _resolveOrder(\Maho\Event $event): ?Mage_Sales_Model_Order
     {
         $variables = $event->getData('variables');
         if (is_array($variables) && isset($variables['order']) && $variables['order'] instanceof Mage_Sales_Model_Order) {
