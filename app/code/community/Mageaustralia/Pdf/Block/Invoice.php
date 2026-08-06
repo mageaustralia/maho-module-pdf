@@ -63,9 +63,20 @@ class Mageaustralia_Pdf_Block_Invoice extends Mage_Core_Block_Template
     }
 
     /**
+     * @param Mage_Sales_Model_Order_Address|false|null $address
      * @return string[] one address line per element
+     *
+     * Accepts false because that is what the order actually returns. Both
+     * Mage_Sales_Model_Order::getShippingAddress() and getBillingAddress() walk the
+     * address collection and "return false" when there is no match - they do not
+     * return null. A virtual order has no shipping address, so passing that straight
+     * in threw a TypeError against the previous ?Mage_Sales_Model_Order_Address hint.
+     *
+     * That mattered more than a log line: the invoice PDF is rendered by an observer
+     * on email send, so the throw aborted the queued email for every virtual-only
+     * order instead of just omitting an address block.
      */
-    public function getAddressLines(?Mage_Sales_Model_Order_Address $address): array
+    public function getAddressLines(Mage_Sales_Model_Order_Address|false|null $address): array
     {
         if (!$address) {
             return [];
@@ -131,9 +142,49 @@ class Mageaustralia_Pdf_Block_Invoice extends Mage_Core_Block_Template
         );
     }
 
+    /**
+     * Authority to leave, from the Starshipit note that actually records the shopper's
+     * choice at checkout.
+     *
+     * Three fields look like they hold this and only one does. sales_flat_order.atl_required
+     * and shippit_authority_to_leave are both dead on this install — atl_required is 0 on
+     * every order and shippit_authority_to_leave is NULL on every order — so reading either
+     * printed "No" for everyone, including shoppers who had asked for authority to leave and
+     * left delivery instructions saying so. The live value is shipnote_note.authority_to_leave,
+     * which is also mutually exclusive with signature_required.
+     *
+     * The two order columns remain as a fallback for orders with no note record.
+     */
     public function getAuthorityToLeave(): string
     {
-        return $this->getOrder()->getAtlRequired() ? 'Yes' : 'No';
+        $note = $this->getShipNote();
+        if ($note) {
+            return $note->getAuthorityToLeave() ? 'Yes' : 'No';
+        }
+
+        $order = $this->getOrder();
+        return ($order->getShippitAuthorityToLeave() ?? $order->getAtlRequired()) ? 'Yes' : 'No';
+    }
+
+    /**
+     * The Starshipit note for this order, or null when the module or the record is absent.
+     *
+     * @return Rvtech_Starshipit_Model_Note|null
+     */
+    private function getShipNote()
+    {
+        $noteModel = Mage::getModel('shipnote/note');
+        if (!$noteModel) {
+            return null;
+        }
+
+        try {
+            $note = $noteModel->loadByOrder($this->getOrder());
+        } catch (\Throwable $e) {
+            return null; // note module/data absent
+        }
+
+        return ($note && $note->getId()) ? $note : null;
     }
 
     /**
@@ -141,18 +192,11 @@ class Mageaustralia_Pdf_Block_Invoice extends Mage_Core_Block_Template
      */
     public function getShippingNote(): string
     {
-        $order = $this->getOrder();
-        $noteModel = Mage::getModel('shipnote/note');
-        if ($noteModel) {
-            try {
-                $note = $noteModel->loadByOrder($order);
-                if ($note && $note->getId() && $note->getDeliveryInstructions()) {
-                    return (string) $note->getDeliveryInstructions();
-                }
-            } catch (\Throwable $e) {
-                // note module/data absent - fall through
-            }
+        $note = $this->getShipNote();
+        if ($note && $note->getDeliveryInstructions()) {
+            return (string) $note->getDeliveryInstructions();
         }
-        return (string) ($order->getShippitDeliveryInstructions() ?? '');
+
+        return (string) ($this->getOrder()->getShippitDeliveryInstructions() ?? '');
     }
 }
